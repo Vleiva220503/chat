@@ -1,18 +1,9 @@
-import React, { useState } from "react";
+import React from 'react';
 
-const ChatInput = ({ sendMessage }) => {
-  const [message, setMessage] = useState("");
-
-  const handleSend = () => {
-    if (message.trim() !== "") {
-      sendMessage(message);
-      setMessage("");
-    }
-  };
-
+const ChatInput = ({ message, setMessage, sendMessage }) => {
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleSend();
+    if (e.key === 'Enter') {
+      sendMessage();
     }
   };
 
@@ -26,9 +17,7 @@ const ChatInput = ({ sendMessage }) => {
         onKeyDown={handleKeyDown}
         className="input-field"
       />
-      <button onClick={handleSend} className="send-button">
-        Enviar
-      </button>
+      <button onClick={sendMessage} className="send-button">Enviar</button>
     </div>
   );
 };

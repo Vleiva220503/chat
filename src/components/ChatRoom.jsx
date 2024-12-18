@@ -1,31 +1,73 @@
-import React, { useState } from "react";
-import ChatMessages from "./ChatMessages";
-import ChatInput from "./ChatInput";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import MessageInput from './ChatInput';
+import ChatMessages from './ChatMessages';
+import UserList from './UserList';
 
 const ChatRoom = ({ user }) => {
+  const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
 
-  const sendMessage = (messageText) => {
-    if (messageText.trim() === "") return;
+  useEffect(() => {
+    // Obtener mensajes
+    axios.get('http://localhost:5000/api/messages')
+      .then(response => {
+        setMessages(response.data);
+      })
+      .catch(err => console.error("Error al obtener mensajes:", err));
 
-    const newMessage = {
+    // Obtener usuarios
+    axios.get('http://localhost:5000/api/users')
+      .then(response => {
+        setUsers(response.data);
+      })
+      .catch(err => console.error("Error al obtener usuarios:", err));
+  }, []);
+
+  const sendMessage = () => {
+    if (message.trim() === '') return;
+
+    axios.post('http://localhost:5000/api/messages/send', {
       author: user,
-      message: messageText,
-      timestamp: new Date().toLocaleTimeString(),
-    };
-
-    // Agrega el nuevo mensaje al estado
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
+      message,
+    })
+    .then(response => {
+      setMessages(prevMessages => [response.data.data, ...prevMessages]);
+      setMessage('');
+    })
+    .catch(err => console.error("Error al enviar mensaje:", err));
   };
 
   return (
     <div className="chatroom-container">
-      <div className="chat-header">
-        <h2>Chat Global</h2>
-        <p>Conectado como: <strong>{user}</strong></p>
+      <div className="sidebar">
+        <UserList
+          users={users}
+          currentUser={user}
+          onSelectUser={setSelectedUser}
+          selectedUser={selectedUser}
+        />
       </div>
-      <ChatMessages messages={messages} currentUser={user} />
-      <ChatInput sendMessage={sendMessage} />
+      <div className="chat-content">
+        <div className="chat-header">
+          <h2>Chat en Tiempo Real</h2>
+          {selectedUser ? <p>Chateando con: {selectedUser}</p> : <p>Chat General</p>}
+        </div>
+        <div className="chat-messages">
+          {messages
+            .filter((msg) => msg.to === selectedUser || msg.to === 'general')
+            .map((msg, index) => (
+              <ChatMessages key={index} message={msg} isOwnMessage={msg.author === user} />
+            ))}
+        </div>
+        <MessageInput
+          message={message}
+          setMessage={setMessage}
+          sendMessage={sendMessage}
+        />
+      </div>
     </div>
   );
 };
